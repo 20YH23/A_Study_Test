@@ -1,0 +1,43 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest requests pytest-html python-dotenv tenacity
+
+      - name: Create .env file from Secrets
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          API_USERNAME: ${{ secrets.API_USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+        run: |
+          echo "BASE_URL=$BASE_URL" > .env
+          echo "API_USERNAME=$API_USERNAME" >> .env
+          echo "PASSWORD=$PASSWORD" >> .env
+
+      - name: Run tests with pytest
+        run: |
+          pytest test_login_token.py --html=report.html --self-contained-html
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: report.html
