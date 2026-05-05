@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3  # 降级为v3，Gitee兼容
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v3  # 降级为v3
         with:
           python-version: '3.12'
       - name: Install dependencies
@@ -23,7 +23,7 @@ jobs:
         run: |
           pytest test_login_token.py --html=report.html --self-contained-html
       - name: Upload report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3  # 降级为v3
         with:
           name: test-report
           path: report.html
