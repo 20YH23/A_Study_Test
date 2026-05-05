@@ -153,10 +153,86 @@
 #     assert True
 
 
+# import os
+# import requests
+# import pytest
+# from dotenv import load_dotenv
+#
+#
+# # 加载 .env 文件中的环境变量（默认读取 .env 文件）
+# load_dotenv()
+#
+# # 从环境变量读取配置
+# BASE_URL = os.getenv("BASE_URL")
+# USERNAME = os.getenv("API_USERNAME")   # 避免与 Windows 系统变量冲突
+# PASSWORD = os.getenv("PASSWORD")
+#
+# def login():
+#     """模拟登录：发送 POST 请求，从响应中提取用户名，拼接 token"""
+#     url = f"{BASE_URL}/post"
+#     payload = {"username": USERNAME, "password": PASSWORD}
+#     resp = requests.post(url, json=payload)
+#     # 先断言状态码成功
+#     assert resp.status_code == 200, f"登录失败，状态码：{resp.status_code}"
+#     # 解析 JSON
+#     data = resp.json()
+#     # 从响应的 json 字段中取回 username（httpbin 会原样返回）
+#     returned_username = data["json"]["username"]
+#     # 模拟服务端生成的 token（真实项目通常从响应中直接取 token 字段）
+#     token = returned_username + "_token"
+#     return token
+#
+# @pytest.fixture(scope="session")
+# def auth_token():
+#     """整个测试会话只登录一次，返回 token"""
+#     print("\n>>> 执行登录，获取 token（整个会话只一次）")
+#     token = login()
+#     return token
+#
+# def test_bearer_check(auth_token):
+#     """测试1：使用 token 访问 /bearer 端点"""
+#     headers = {"Authorization": f"Bearer {auth_token}"}
+#     url = f"{BASE_URL}/bearer"
+#     resp = requests.get(url, headers=headers)
+#     assert resp.status_code == 200
+#     data = resp.json()
+#     # /bearer 会返回 token 字段，值应该和我们发送的一样
+#     assert data["token"] == auth_token
+#     print(f"\n测试1 通过，token 验证成功: {auth_token}")
+#
+# def test_anything_check(auth_token):
+#     """测试2：使用 token 访问 /anything 端点，验证请求头中的 Authorization"""
+#     headers = {"Authorization": f"Bearer {auth_token}"}
+#     url = f"{BASE_URL}/anything"
+#     resp = requests.get(url, headers=headers)
+#     assert resp.status_code == 200
+#     data = resp.json()
+#     # 检查响应中 headers 下的 Authorization 字段
+#     # httpbin 返回的 headers 中键名为 "Authorization"（首字母大写）
+#     assert data["headers"].get("Authorization") == f"Bearer {auth_token}"
+#     print(f"\n测试2 通过，请求头中的 Authorization 正确: Bearer {auth_token}")
+#
+# if __name__ == "__main__":
+#     # 方便直接运行此文件（非 pytest 方式），但推荐用 pytest 命令
+#     pytest.main([__file__, "-v", "--html=report.html", "--self-contained-html"])
+
+
 import os
 import requests
 import pytest
 from dotenv import load_dotenv
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler('test_run.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ],
+    force=True
+)
 
 # 加载 .env 文件中的环境变量（默认读取 .env 文件）
 load_dotenv()
@@ -184,7 +260,7 @@ def login():
 @pytest.fixture(scope="session")
 def auth_token():
     """整个测试会话只登录一次，返回 token"""
-    print("\n>>> 执行登录，获取 token（整个会话只一次）")
+    logging.info("执行登录，获取 token（整个会话只一次）")
     token = login()
     return token
 
@@ -197,7 +273,7 @@ def test_bearer_check(auth_token):
     data = resp.json()
     # /bearer 会返回 token 字段，值应该和我们发送的一样
     assert data["token"] == auth_token
-    print(f"\n测试1 通过，token 验证成功: {auth_token}")
+    logging.info(f"测试1 通过，token 验证成功: {auth_token}")
 
 def test_anything_check(auth_token):
     """测试2：使用 token 访问 /anything 端点，验证请求头中的 Authorization"""
@@ -209,7 +285,7 @@ def test_anything_check(auth_token):
     # 检查响应中 headers 下的 Authorization 字段
     # httpbin 返回的 headers 中键名为 "Authorization"（首字母大写）
     assert data["headers"].get("Authorization") == f"Bearer {auth_token}"
-    print(f"\n测试2 通过，请求头中的 Authorization 正确: Bearer {auth_token}")
+    logging.info(f"测试2 通过，请求头中的 Authorization 正确: Bearer {auth_token}")
 
 if __name__ == "__main__":
     # 方便直接运行此文件（非 pytest 方式），但推荐用 pytest 命令
