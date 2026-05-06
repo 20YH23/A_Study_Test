@@ -2,9 +2,9 @@ name: Python Tests
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ master ]
   pull_request:
-    branches: [ master, main ]
+    branches: [ master ]
 
 jobs:
   test:
@@ -12,16 +12,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Install dependencies
         run: |
           pip install pytest requests pytest-html python-dotenv tenacity
-
       - name: Create .env file from Secrets
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
@@ -31,13 +28,30 @@ jobs:
           echo "BASE_URL=$BASE_URL" > .env
           echo "API_USERNAME=$API_USERNAME" >> .env
           echo "PASSWORD=$PASSWORD" >> .env
-
       - name: Run tests with pytest
         run: |
           pytest test_login_token.py --html=report.html --self-contained-html
-
       - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report
           path: report.html
+
+  # 新增 CD job：将报告部署到 GitHub Pages
+  deploy-report:
+    needs: test                 # 必须等待 test job 成功后才执行
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write           # 允许写入 gh-pages 分支
+    steps:
+      - name: Download report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-report
+          path: report
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./report
+          destination_dir: ./test-report
